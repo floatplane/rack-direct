@@ -66,7 +66,11 @@ module RackDirect
 
   class ActiveResource::Connection
     def request(method, path, *arguments)
+      # TODO: passthrough HTTP
       raise "TODO: passthrough http" unless site.scheme == "rack-direct"
+
+      # TODO: look up the rack-direct service to connect to based on scheme and host
+
       # puts "#{method.to_s.upcase} #{site.scheme}://#{site.host}:#{site.port}#{path}" if logger
       result = nil
 
@@ -100,7 +104,7 @@ module RackDirect
 
   class InventoryService
     @@child_process = nil
-    def self.start
+    def self.start name, path
       unless @@child_process
         # TODO: remove hard-coded path
         rackup_file_contents = <<-EOF
@@ -117,8 +121,10 @@ EOF
         tmpfile = File.open tmppath, "w+"
         tmpfile.write rackup_file_contents
         tmpfile.close
-        puts "Starting the inventory service"
-        cmd = "cd ~/src/jambool/trunk/data/inventory/ && rake db:test:prepare && rackup --server #{RACK_DIRECT_ALIAS} #{tmpfile.path}"
+        
+        # TODO: check path to make sure a Rails app exists there
+        puts "Starting the service \"#{name}\" via rack-direct"
+        cmd = "cd #{path} && rake db:test:prepare && rackup --server #{RACK_DIRECT_ALIAS} #{tmpfile.path}"
         puts cmd
         @@child_process = IO.popen cmd, "w+"
         # set ServiceInterface::InventoryApi::Base.site to point at that server
