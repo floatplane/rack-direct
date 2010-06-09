@@ -1,8 +1,5 @@
 require 'rack_direct/direct_handler'
 RACK_DIRECT_ALIAS = 'rack-direct'
-Rack::Handler.register(RACK_DIRECT_ALIAS, 'RackDirect::DirectHandler')
-
-puts "RackDirect::DirectHandler registered"
 
 require 'rack'
 require 'active_resource'
@@ -86,7 +83,7 @@ module RackDirect
         "CONTENT_TYPE" => headers["Content-Type"],
       }
 
-      result = JSON.parse(InventoryService.send_request(payload))
+      result = JSON.parse(Service.send_request(site.host, payload))
 
       result = DirectResponse.new result["status"], result["headers"], result["body"]
 
@@ -102,14 +99,16 @@ module RackDirect
     end
   end
 
-  class InventoryService
-    @@child_process = nil
+  class Service
+    @@services = {}
     def self.start name, path
-      unless @@child_process
+      unless @@services[name]
         # TODO: remove hard-coded path
         rackup_file_contents = <<-EOF
 $: << '~/src/rack-direct/lib'
 require 'rack_direct'
+Rack::Handler.register('#{RACK_DIRECT_ALIAS}', 'RackDirect::DirectHandler')
+puts "RackDirect::DirectHandler registered"
 
 require "config/environment"
 use Rails::Rack::LogTailer
@@ -121,36 +120,35 @@ EOF
         tmpfile = File.open tmppath, "w+"
         tmpfile.write rackup_file_contents
         tmpfile.close
-        
+
         # TODO: check path to make sure a Rails app exists there
-        puts "Starting the service \"#{name}\" via rack-direct"
+        print "Starting service rack-direct://#{name}..."
         cmd = "cd #{path} && rake db:test:prepare && rackup --server #{RACK_DIRECT_ALIAS} #{tmpfile.path}"
-        puts cmd
-        @@child_process = IO.popen cmd, "w+"
-        # set ServiceInterface::InventoryApi::Base.site to point at that server
-        ServiceInterface::InventoryApi::Base.site = "rack-direct://inventory"
+        # puts cmd
+        @@services[name] = IO.popen cmd, "w+"
+        puts "done."
 
         at_exit do
+          RackDirect::Service.stop name
           File.unlink tmppath
-          RackDirect::InventoryService.stop
         end
       end
+      "rack-direct://#{name}"
     end
 
-    def self.send_request rack_request_env
+    def self.send_request name, rack_request_env
 
-      if @@child_process
+      if @@services[name]
 
         rack_request_env["direct_request.unique_id"] = Guid.new.to_s
 
-        @@child_process.puts rack_request_env.to_json
-        @@child_process.puts ""
+        @@services[name].puts rack_request_env.to_json
+        @@services[name].puts ""
 
         response = ""
         in_response = false
         while true
-          line = @@child_process.gets
-          # puts "SERVER: #{line.strip}"
+          line = @@services[name].gets
           if line.strip == "BEGIN #{rack_request_env["direct_request.unique_id"]}"
             in_response = true
             next
@@ -159,7 +157,7 @@ EOF
           elsif in_response
             response += line
           else
-            puts "SERVER: #{line.strip}"
+            puts "rack-direct://#{name}: #{line.strip}"
           end
         end
         # puts "Final response: #{response}"
@@ -168,12 +166,12 @@ EOF
 
     end
 
-    def self.stop
-      if @@child_process
-        print "Killing server..."
-        @@child_process.puts "EXIT"
-        @@child_process.puts ""
-        @@child_process = nil
+    def self.stop name
+      if @@services[name]
+        print "Stopping service rack-direct://#{name}..."
+        @@services[name].puts "EXIT"
+        @@services[name].puts ""
+        @@services[name] = nil
         Process.waitall
         puts "done."
       end
