@@ -79,7 +79,6 @@ module RackDirect
 
     def self.generate_rackup_file
       rackup_file_contents = <<-EOF
-$: << '~/src/rack-direct/lib'
 require 'rack_direct/direct_handler'
 Rack::Handler.register('#{RACK_DIRECT_ALIAS}', 'RackDirect::DirectHandler')
 # puts "RackDirect::DirectHandler registered"

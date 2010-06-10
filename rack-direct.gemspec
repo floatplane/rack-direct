@@ -1,9 +1,6 @@
 Gem::Specification.new do |s|
-  s.add_dependency 'activeresource', '>= 2.3.5'
-  s.add_dependency 'rack', '>= 1.0.1'
-
   s.name = %q{rack_direct}
-  s.version = "0.1.3"
+  s.version = "0.1.5"
   s.date = %q{2010-06-09}
   s.authors = ["Brian Sharon"]
   s.email = %q{brian@floatplane.us}
