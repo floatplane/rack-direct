@@ -23,7 +23,7 @@ module RackDirect
         tmppath = generate_rackup_file options[:env]
 
         # TODO: check path to make sure a Rails app exists there
-        print "Starting service rack-direct://#{name}..."
+        print "rack-direct: starting service #{name}..."
         cmd = "cd #{path} && rake db:test:prepare && rackup --server #{RACK_DIRECT_ALIAS} #{tmppath} 2>&1"
         # puts cmd
         @@services[name] = IO.popen cmd, "w+"
@@ -69,7 +69,7 @@ module RackDirect
 
     def self.stop name
       if @@services[name]
-        print "Stopping service rack-direct://#{name}..."
+        print "rack-direct: stopping service #{name}..."
         @@services[name].puts "EXIT"
         @@services[name].puts ""
         @@services[name] = nil
