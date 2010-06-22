@@ -1,4 +1,5 @@
 require 'rack_direct/service'
+require 'rack_direct/version'
 
 # TODO: 
 # when required, run an initializer that plugs into ActiveResource

@@ -1,6 +1,9 @@
+$LOAD_PATH.unshift File.expand_path("../lib", __FILE__)
+require "rack_direct/version"
+
 Gem::Specification.new do |s|
   s.name = %q{rack_direct}
-  s.version = "0.1.7"
+  s.version = RackDirect::VERSION
   s.date = %q{2010-06-09}
   s.authors = ["Brian Sharon"]
   s.email = %q{brian@floatplane.us}
