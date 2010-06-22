@@ -58,7 +58,7 @@ module RackDirect
           elsif in_response
             response += line
           else
-            puts "rack-direct://#{name}: #{line.strip}" if self.verbose_logging
+            puts "#{name}> #{line.strip}" if self.verbose_logging
           end
         end
         # puts "Final response: #{response}"

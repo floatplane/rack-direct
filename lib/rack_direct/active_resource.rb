@@ -21,7 +21,7 @@ module RackDirect
         # Note: We can't pass through a site.scheme of 'rack-direct'
         # because the Rack instance on the receiving end will freak
         # out. So we use http in the URI here.
-        "uri" => "http://#{site.host}:#{site.port}#{path}",
+        "uri" => "http://#{site.host}#{path}",
         "method" => method.to_s.upcase,
         "body" => body.to_s,
         "CONTENT_TYPE" => headers["Content-Type"] || "text/plain;charset=utf-8",
