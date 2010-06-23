@@ -31,13 +31,11 @@ module RackDirect
 
       result = DirectResponse.new result["status"], result["headers"], result["body"]
 
-      if Service.verbose_logging
-        puts "***** #{result.code} #{result.message}"
-        result.each_header { |k,v| puts "***** #{k}: #{v}" }
-        puts "***** START BODY"
-        puts result.body
-        puts "***** END BODY"
-      end
+      Service.log site.host, "#{result.code} #{result.message}"
+      result.each_header { |k,v| Service.log site.host, "#{k}: #{v}" }
+      Service.log site.host, "START BODY"
+      Service.log site.host, result.body
+      Service.log site.host, "END BODY"
 
       handle_response(result)
     end

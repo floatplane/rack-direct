@@ -13,6 +13,13 @@ module RackDirect
       attr_accessor :verbose_logging
     end
 
+    def self.log name, msg
+      if self.verbose_logging
+        msg = msg.gsub(/^/, "#{name}> ")
+        puts msg
+      end
+    end
+
     @@services = {}
     def self.start path, options = {}
 
@@ -20,14 +27,14 @@ module RackDirect
 
       unless @@services[name]
 
-        tmppath = generate_rackup_file options[:env]
+        tmppath = generate_rackup_file name, options[:env]
 
         # TODO: check path to make sure a Rails app exists there
-        print "rack-direct: starting service #{name}..." if self.verbose_logging
+        self.log name, "starting service via rack_direct..."
         cmd = "cd #{path} && rake db:test:prepare && rackup --server #{RACK_DIRECT_ALIAS} #{tmppath} 2>&1"
-        # puts cmd
+        self.log name, cmd
         @@services[name] = IO.popen cmd, "w+"
-        puts "done." if self.verbose_logging
+        self.log name, "service started"
 
         at_exit do
           RackDirect::Service.stop name
@@ -58,10 +65,10 @@ module RackDirect
           elsif in_response
             response += line
           else
-            puts "#{name}> #{line.strip}" if self.verbose_logging
+            self.log name, "#{line.strip}"
           end
         end
-        puts "Final response: #{response}" if self.verbose_logging
+        # self.log name, "Final response: #{response}"
         response
       end
 
@@ -69,18 +76,18 @@ module RackDirect
 
     def self.stop name
       if @@services[name]
-        print "rack-direct: stopping service #{name}..." if self.verbose_logging
+        self.log name, "stopping service..."
         @@services[name].puts "EXIT"
         @@services[name].puts ""
         @@services[name] = nil
         Process.waitall
-        puts "done." if self.verbose_logging
+        self.log name, "service stopped."
       end
     end
 
     private
 
-    def self.generate_rackup_file environment
+    def self.generate_rackup_file name, environment
       rackup_file_contents = <<-EOF
 require 'rack_direct/direct_handler'
 Rack::Handler.register('#{RACK_DIRECT_ALIAS}', 'RackDirect::DirectHandler')
@@ -106,7 +113,7 @@ EOF
       tmpfile.write rackup_file_contents
       tmpfile.close
 
-      puts "rack_direct: Created rackup file #{tmppath}" if self.verbose_logging
+      self.log name, "Created rackup file #{tmppath}"
 
       tmppath
     end
