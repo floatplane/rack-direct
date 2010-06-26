@@ -36,7 +36,6 @@ module RackDirect
         rackup_path = Gem.bin_path "rack", "rackup", "< 1.1"
 
         cmd = "cd #{path} && rake db:test:prepare && #{rackup_path} --server #{RACK_DIRECT_ALIAS} #{tmppath} 2>&1 | tee output"
-        puts cmd
         self.log name, cmd
         @@services[name] = IO.popen cmd, "w+"
         self.log name, "service started"
