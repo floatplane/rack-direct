@@ -31,7 +31,12 @@ module RackDirect
 
         # TODO: check path to make sure a Rails app exists there
         self.log name, "starting service via rack_direct..."
-        cmd = "cd #{path} && rake db:test:prepare && rackup --server #{RACK_DIRECT_ALIAS} #{tmppath} 2>&1"
+
+        # TODO: remove this hack to force an old version of rack when loading an older Rails project
+        rackup_path = Gem.bin_path "rack", "rackup", "< 1.1"
+
+        cmd = "cd #{path} && rake db:test:prepare && #{rackup_path} --server #{RACK_DIRECT_ALIAS} #{tmppath} 2>&1 | tee output"
+        puts cmd
         self.log name, cmd
         @@services[name] = IO.popen cmd, "w+"
         self.log name, "service started"
@@ -89,6 +94,7 @@ module RackDirect
 
     def self.generate_rackup_file name, environment
       rackup_file_contents = <<-EOF
+require 'rubygems'
 require 'rack_direct/direct_handler'
 Rack::Handler.register('#{RACK_DIRECT_ALIAS}', 'RackDirect::DirectHandler')
 # puts "RackDirect::DirectHandler registered"
